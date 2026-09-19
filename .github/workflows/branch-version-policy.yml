@@ -10,15 +10,15 @@ jobs:
     name: Validate branch suffix
     runs-on: ubuntu-latest
     steps:
-      - name: Validate branch name ends with -MAJOR, -MINOR or -PATCH
+      - name: Check that the branch ends with -MAJOR, -MINOR, or -PATCH
         run: |
           BRANCH="${{ github.head_ref }}"
           echo "Branch: $BRANCH"
 
           if [[ ! "$BRANCH" =~ -(MAJOR|MINOR|PATCH)$ ]]; then
-            echo "::error::La rama debe terminar en -MAJOR, -MINOR o -PATCH."
-            echo "Ejemplos: feature/login-MINOR, fix/bug-42-PATCH, breaking/api-MAJOR"
+            echo "::error::Branch name must end with -MAJOR, -MINOR, or -PATCH."
+            echo "Examples: feature/login-MINOR, fix/bug-42-PATCH, breaking/api-MAJOR"
             exit 1
           fi
 
-          echo "Bump type: ${BASH_REMATCH[1]}"
+          echo "Version bump type: ${BASH_REMATCH[1]}"

@@ -32,19 +32,19 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - name: Set TB License
+      - name: Set TestBench license
         run: |
           TB_LICENSE=${{secrets.TB_LICENSE}}
           mkdir -p ~/.vaadin/
           echo '{"username":"'`echo $TB_LICENSE | cut -d / -f1`'","proKey":"'`echo $TB_LICENSE | cut -d / -f2`'"}' > ~/.vaadin/proKey
-      - name: Verify
+      - name: Verify and run tests
         run: mvn -B -ntp verify -Pit -Dcom.vaadin.testbench.Parameters.maxAttempts=2 -Dcom.vaadin.testbench.Parameters.headless=true
       - name: Publish test results
         if: ${{ always() }}
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           files: '**/failsafe-reports/TEST-*.xml'
-      - name: Upload test artifacts
+      - name: Upload debug artifacts
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
@@ -54,6 +54,7 @@ jobs:
             error-screenshots/
 
   verify-native:
+    name: Native validation
     runs-on: ubuntu-latest
     permissions:
       issues: read
@@ -71,10 +72,10 @@ jobs:
           java-version: '25'
           distribution: 'graalvm'
 
-      - name: Set TB License
+      - name: Set TestBench license
         run: |
           TBL=${{ secrets.TB_LICENSE }}
-          [ -z "$TBL" ] && echo "No TB license provided" && exit 1
+          [ -z "$TBL" ] && echo "No TestBench license provided" && exit 1
           mkdir -p ~/.vaadin/
           echo '{"username":"'`echo $TBL | cut -d / -f1`'","proKey":"'`echo $TBL | cut -d / -f2`'"}' > ~/.vaadin/proKey
 
@@ -84,27 +85,27 @@ jobs:
           key: ${{ runner.os }}-maven-native-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-maven-
 
-      - name: Run TestBench Tests
+      - name: Run TestBench tests
         run: |
           mvn -B -V -ntp verify -Pit -Dnative \
             -Dcom.vaadin.testbench.Parameters.headless=true \
             -Dcom.vaadin.testbench.Parameters.testsInParallel=1
 
-      - name: Stop Native Application
+      - name: Stop native application
         if: always()
         run: |
           if [ -f ./target/app.pid ]; then
             kill $(cat ./target/app.pid) || true
           fi
 
-      - name: Publish Test Results
+      - name: Publish test results
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         with:
           files: "**/target/*-reports/TEST*.xml"
-          check_name: "Native Test Results"
+          check_name: "Native test results"
 
-      - name: Upload Debug Artifacts
+      - name: Upload debug artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
