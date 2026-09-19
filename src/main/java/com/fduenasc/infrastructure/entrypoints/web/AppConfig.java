@@ -1,4 +1,4 @@
-package com.fduenasc;
+package com.fduenasc.infrastructure.entrypoints.web;
 
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.page.AppShellConfigurator;
