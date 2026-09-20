@@ -14,6 +14,9 @@ import java.util.Map;
 
 /**
  * Processes templates using Freemarker.
+ *
+ * @author Francisco Dueñas
+ * @since 0.1.0
  */
 @ApplicationScoped
 public class FreemarkerProcessor implements TemplateProcessor {

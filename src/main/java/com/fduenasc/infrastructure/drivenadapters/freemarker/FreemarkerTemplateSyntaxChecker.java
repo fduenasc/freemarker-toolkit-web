@@ -12,6 +12,9 @@ import java.io.StringReader;
 
 /**
  * Checks the syntax of Freemarker templates.
+ *
+ * @author Francisco Dueñas
+ * @since 0.1.0
  */
 @ApplicationScoped
 public class FreemarkerTemplateSyntaxChecker implements TemplateSyntaxChecker {
