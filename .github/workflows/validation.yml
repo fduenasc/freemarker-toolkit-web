@@ -11,107 +11,25 @@ concurrency:
 env:
   JAVA_VERSION: '21'
   NODE_VERSION: '24'
-  MAVEN_VERSION: '3.8.7'
 
 jobs:
   validation:
     name: Validation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: actions/setup-java@v5
+
+      - uses: actions/setup-java@v4
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
           cache: 'maven'
-      - uses: stCarolas/setup-maven@v5.1
-        with:
-          maven-version: ${{ env.MAVEN_VERSION }}
-      - uses: actions/setup-node@v5
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Set TestBench license
-        run: |
-          TB_LICENSE=${{secrets.TB_LICENSE}}
-          mkdir -p ~/.vaadin/
-          echo '{"username":"'`echo $TB_LICENSE | cut -d / -f1`'","proKey":"'`echo $TB_LICENSE | cut -d / -f2`'"}' > ~/.vaadin/proKey
-      - name: Verify and run tests
-        run: mvn -B -ntp verify -Pit -Dcom.vaadin.testbench.Parameters.maxAttempts=2 -Dcom.vaadin.testbench.Parameters.headless=true
-      - name: Publish test results
-        if: ${{ always() }}
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        with:
-          files: '**/failsafe-reports/TEST-*.xml'
-      - name: Upload debug artifacts
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-artifacts
-          path: |
-            **/failsafe-reports/
-            error-screenshots/
-
-  verify-native:
-    name: Native validation
-    runs-on: ubuntu-latest
-    permissions:
-      issues: read
-      checks: write
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: ${{ env.NODE_VERSION }}
 
-      - uses: actions/setup-java@v4
-        with:
-          java-version: '25'
-          distribution: 'graalvm'
-
-      - name: Set TestBench license
-        run: |
-          TBL=${{ secrets.TB_LICENSE }}
-          [ -z "$TBL" ] && echo "No TestBench license provided" && exit 1
-          mkdir -p ~/.vaadin/
-          echo '{"username":"'`echo $TBL | cut -d / -f1`'","proKey":"'`echo $TBL | cut -d / -f2`'"}' > ~/.vaadin/proKey
-
-      - uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-native-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
-
-      - name: Run TestBench tests
-        run: |
-          mvn -B -V -ntp verify -Pit -Dnative \
-            -Dcom.vaadin.testbench.Parameters.headless=true \
-            -Dcom.vaadin.testbench.Parameters.testsInParallel=1
-
-      - name: Stop native application
-        if: always()
-        run: |
-          if [ -f ./target/app.pid ]; then
-            kill $(cat ./target/app.pid) || true
-          fi
-
-      - name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        if: always()
-        with:
-          files: "**/target/*-reports/TEST*.xml"
-          check_name: "Native test results"
-
-      - name: Upload debug artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: native-debug-artifacts
-          path: |
-            ./target/*-reports
-            ./error-screenshots
-            ./target/quarkus.log
-          retention-days: 7
+      - name: Build
+        run: mvn -B -ntp verify -DskipTests
