@@ -1,17 +1,64 @@
 /*
-   CSS styling examples for the Vaadin app.
-   Visit https://vaadin.com/docs/latest/styling/application-theme and
-   https://vaadin.com/docs/latest/styling/lumo for more information.
+   FreeMarker JSON/XML Toolkit — web styles
 */
 
-/* Example: CSS class name to center align the content . */
-.centered-content {
-    margin: 0 auto;
-    max-width: 250px;
+.toolkit-main {
+    height: 100%;
 }
 
-/* Example: the style is applied only to the textfields which have the `bordered` class name. */
-vaadin-text-field.bordered::part(input-field) {
-    box-shadow: inset 0 0 0 1px var(--lumo-contrast-30pct);
-    background-color: var(--lumo-base-color);
+.toolkit-main-split,
+.toolkit-top-split {
+    min-height: 0;
+}
+
+.editor-section {
+    border: 1px solid var(--lumo-contrast-10pct);
+    border-radius: var(--lumo-border-radius-m);
+    padding: var(--lumo-space-s);
+    min-height: 0;
+}
+
+.editor-section-title {
+    font-weight: 600;
+    margin-bottom: var(--lumo-space-xs);
+}
+
+.editor-textarea {
+    font-family: var(--lumo-font-family-mono);
+    font-size: var(--lumo-font-size-s);
+}
+
+.editor-textarea::part(input-field) {
+    min-height: 12rem;
+}
+
+.editor-toolbar {
+    margin-top: var(--lumo-space-xs);
+    gap: var(--lumo-space-xs);
+}
+
+.editor-footer {
+    margin-top: var(--lumo-space-xs);
+}
+
+.expected-fields-footer {
+    border-top: 1px solid var(--lumo-contrast-10pct);
+    padding-top: var(--lumo-space-s);
+    gap: var(--lumo-space-m);
+}
+
+.expected-fields-title {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.expected-fields-summary {
+    color: var(--lumo-secondary-text-color);
+    font-size: var(--lumo-font-size-s);
+    white-space: nowrap;
+}
+
+.expected-fields-validation {
+    flex-grow: 1;
+    font-size: var(--lumo-font-size-s);
 }

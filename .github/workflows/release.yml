@@ -23,12 +23,12 @@ jobs:
           fetch-depth: 0
           ref: main
 
-      - name: Resolve bump type from branch name
+      - name: Resolve version bump type from branch name
         id: bump
         run: |
           BRANCH="${{ github.event.pull_request.head.ref }}"
           if [[ ! "$BRANCH" =~ -(MAJOR|MINOR|PATCH)$ ]]; then
-            echo "::error::Rama mergeada sin sufijo válido: $BRANCH"
+            echo "::error::Merged branch has no valid suffix: $BRANCH"
             exit 1
           fi
           echo "type=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
@@ -54,7 +54,7 @@ jobs:
           NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
           echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
           echo "previous_tag=$LAST_TAG" >> "$GITHUB_OUTPUT"
-          echo "Nueva versión: $NEW_VERSION (desde $LAST_TAG, bump $BUMP)"
+          echo "New version: $NEW_VERSION (from $LAST_TAG, bump $BUMP)"
 
       - uses: actions/setup-java@v4
         with:
@@ -62,13 +62,13 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Update pom.xml version
+      - name: Update version in pom.xml
         run: |
           mvn -B -ntp org.codehaus.mojo:versions-maven-plugin:2.18.0:set \
             -DnewVersion=${{ steps.version.outputs.new_version }} \
             -DgenerateBackupPoms=false
 
-      - name: Commit version bump
+      - name: Commit version change
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -76,7 +76,7 @@ jobs:
           git commit -m "chore(release): ${{ steps.version.outputs.new_version }} [skip ci]"
           git push origin main
 
-      - name: Create tag and GitHub Release
+      - name: Create tag and publish release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NEW_VERSION: ${{ steps.version.outputs.new_version }}
