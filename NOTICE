@@ -1,0 +1,9 @@
+FreeMarker Toolkit Web
+Copyright 2026 Francisco Dueñas
+
+This product includes software developed at
+The Apache Software Foundation (https://www.apache.org/).
+
+This product depends on third-party libraries that are licensed separately,
+including but not limited to FreeMarker, Quarkus, Vaadin, and Jackson
+(Apache License, Version 2.0).
