@@ -1,37 +1,92 @@
-# Project Base for Vaadin Flow and Quarkus
+# FreeMarker Toolkit Web
 
-This project can be used as a starting point to create your own Vaadin Flow application for Quarkus. It contains all the necessary configuration with some placeholder files to get you started.
+Web tool to try FreeMarker templates with JSON data and see the result right away.
 
-Quarkus 3.0+ requires Java 17.
+## What it does
 
-Starter is also available for [gradle](https://github.com/vaadin/base-starter-flow-quarkus/tree/gradle)
+- Write a FreeMarker template.
+- Load a JSON data model.
+- Process the template and view the output.
+- Format JSON or the template.
+- Validate that the output has the fields you expect.
+- Adjust UI language, locale, and time zone.
 
-## Running the Application
+## Requirements
 
-Import the project to the IDE of your choosing as a Maven project. 
+- Java 21 or later.
+- Maven (the project includes the `mvnw` wrapper).
 
-Run the Quarkus application using your preferred method like IDE plugin, CLI `quarkus dev` or Maven  `mvnw quarkus:dev` (Windows), or `./mvnw quarkus:dev` (Mac & Linux) (or shorthand `mvn` as defaultGoal is `quarkus:dev`).
+## How to run
 
-Open [http://localhost:8080/](http://localhost:8080/) in browser.
+On Windows:
 
-If you want to run your app locally in production mode, call `mvnw package` (Windows), or `./mvnw package` (Mac & Linux)
-and then
+```powershell
+.\mvnw.cmd quarkus:dev
 ```
-java -jar target/quarkus-app/quarkus-run.jar
+
+On Mac or Linux:
+
+```bash
+./mvnw quarkus:dev
 ```
 
-### Including vaadin-jandex for Pro components
-If you are using Pro components such GridPro you need to provide the Jandex index for them as well. 
-Although, this can be achieved by adding their names one-by-one in the `application.properties` similar to the following example:
-```properties
-quarkus.index-dependency.vaadin-grid-pro.group-id=com.vaadin
-quarkus.index-dependency.vaadin-grid-pro.artifact-id=vaadin-grid-pro-flow
+Then open [http://localhost:8080/](http://localhost:8080/) in your browser.
+
+## How to use it
+
+1. Write the **template** in the left panel.
+2. Write the **data model** (JSON) in the right panel.
+3. Click **Process template** to see the result.
+4. Optionally format the JSON or template with the panel buttons.
+5. Under **Expected fields**, define which output paths should exist and validate them.
+
+Quick example:
+
+**Template**
+```ftl
+Hello ${name}!
 ```
-Vaadin recommends using the official Jandex index for the Pro components which is published as part of the platform:
-```xml
-<dependency>
-    <groupId>com.vaadin</groupId>
-    <artifactId>vaadin-jandex</artifactId>
-</dependency>
+
+**Data model**
+```json
+{
+  "name": "Ana"
+}
 ```
-The above dependency has already added to the `pom.xml` and all you need to do is uncomment it when if needed. 
+
+**Result**
+```text
+Hello Ana!
+```
+
+## Settings
+
+From the settings menu you can change:
+
+- UI language (Spanish or English).
+- FreeMarker locale.
+- Time zone.
+
+Preferences are kept for the browser session.
+
+## Package for production
+
+```powershell
+.\mvnw.cmd package
+java -jar target\quarkus-app\quarkus-run.jar
+```
+
+## Code layout
+
+The project follows a simple hexagonal layout:
+
+- `domain/model` → result types and stable message keys.
+- `domain/usecase` → business rules, ports, and domain exceptions.
+- `application` → coordinates the tool flow.
+- `infrastructure/entrypoints/web` → web UI (Vaadin) and i18n text.
+- `infrastructure/drivenadapters/freemarker` → FreeMarker engine.
+- `infrastructure/helpers` → user preferences.
+
+## License
+
+Licensed under the [Apache License, Version 2.0](LICENSE).
