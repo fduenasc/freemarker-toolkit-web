@@ -9,6 +9,7 @@ import com.fduenasc.domain.usecase.exception.JsonFormatException;
 import com.fduenasc.domain.usecase.exception.TemplateProcessingException;
 import com.fduenasc.infrastructure.entrypoints.web.i18n.Messages;
 import com.fduenasc.infrastructure.entrypoints.web.ui.EditorSection;
+import com.fduenasc.infrastructure.entrypoints.web.ui.MonacoEditor;
 import com.fduenasc.infrastructure.entrypoints.web.ui.ExpectedFieldsDialog;
 import com.fduenasc.infrastructure.entrypoints.web.ui.SettingsDialog;
 import com.fduenasc.infrastructure.helpers.UserPreferences;
@@ -186,7 +187,8 @@ public class MainView extends VerticalLayout {
      */
     private EditorSection createTemplatePanel() {
         EditorSection panel = new EditorSection(messages.panelTemplate());
-        panel.getEditor().setMinHeight("200px");
+        panel.setLanguageOptions(messages.editorLanguage(), templateLanguageChoices(), MonacoEditor.LANGUAGE_FREEMARKER);
+        panel.setEditorMinHeight("200px");
         panel.addAction(messages.formatTemplate(), this::formatTemplate);
         panel.addAction(messages.singleLine(), this::setTemplateSingleLine);
         panel.onTextChange(text -> refreshTemplateStatus());
@@ -200,7 +202,8 @@ public class MainView extends VerticalLayout {
      */
     private EditorSection createDataPanel() {
         EditorSection panel = new EditorSection(messages.panelDataModel());
-        panel.getEditor().setMinHeight("200px");
+        panel.setLanguageOptions(messages.editorLanguage(), dataLanguageChoices(), MonacoEditor.LANGUAGE_JSON);
+        panel.setEditorMinHeight("200px");
         panel.addAction(messages.formatJson(), this::formatDataModel);
         panel.onTextChange(text -> refreshJsonStatus());
         return panel;
@@ -213,13 +216,54 @@ public class MainView extends VerticalLayout {
      */
     private EditorSection createOutputPanel() {
         EditorSection panel = new EditorSection(messages.panelRenderedResult());
+        panel.setLanguageOptions(messages.editorLanguage(), outputLanguageChoices(), MonacoEditor.LANGUAGE_PLAINTEXT);
         panel.setReadOnly(true);
-        panel.getEditor().setMinHeight("150px");
+        panel.setEditorMinHeight("150px");
         panel.setStatusVisible(false);
         panel.addPrimaryAction(messages.processTemplate(), this::processTemplate);
         panel.addAction(messages.formatJson(), this::formatOutput);
         panel.addAction(messages.clearOutput(), () -> panel.setText(""));
         return panel;
+    }
+
+    /**
+     * Builds the language choices for the template panel.
+     *
+     * @return the template language choices.
+     */
+    private List<EditorSection.LanguageChoice> templateLanguageChoices() {
+        return List.of(
+                new EditorSection.LanguageChoice(MonacoEditor.LANGUAGE_FREEMARKER, Messages.LANGUAGE_FREEMARKER),
+                new EditorSection.LanguageChoice(MonacoEditor.LANGUAGE_HTML, Messages.LANGUAGE_HTML),
+                new EditorSection.LanguageChoice(MonacoEditor.LANGUAGE_PLAINTEXT, messages.languagePlaintext())
+        );
+    }
+
+    /**
+     * Builds the language choices for the data panel.
+     *
+     * @return the data language choices.
+     */
+    private List<EditorSection.LanguageChoice> dataLanguageChoices() {
+        return List.of(
+                new EditorSection.LanguageChoice(MonacoEditor.LANGUAGE_JSON, Messages.LANGUAGE_JSON),
+                new EditorSection.LanguageChoice(MonacoEditor.LANGUAGE_XML, Messages.LANGUAGE_XML),
+                new EditorSection.LanguageChoice(MonacoEditor.LANGUAGE_PLAINTEXT, messages.languagePlaintext())
+        );
+    }
+
+    /**
+     * Builds the language choices for the output panel.
+     *
+     * @return the output language choices.
+     */
+    private List<EditorSection.LanguageChoice> outputLanguageChoices() {
+        return List.of(
+                new EditorSection.LanguageChoice(MonacoEditor.LANGUAGE_PLAINTEXT, messages.languagePlaintext()),
+                new EditorSection.LanguageChoice(MonacoEditor.LANGUAGE_JSON, Messages.LANGUAGE_JSON),
+                new EditorSection.LanguageChoice(MonacoEditor.LANGUAGE_XML, Messages.LANGUAGE_XML),
+                new EditorSection.LanguageChoice(MonacoEditor.LANGUAGE_HTML, Messages.LANGUAGE_HTML)
+        );
     }
 
     /**
@@ -457,6 +501,9 @@ public class MainView extends VerticalLayout {
         templatePanel.setTitle(messages.panelTemplate());
         dataPanel.setTitle(messages.panelDataModel());
         outputPanel.setTitle(messages.panelRenderedResult());
+        templatePanel.refreshLanguageOptions(messages.editorLanguage(), templateLanguageChoices());
+        dataPanel.refreshLanguageOptions(messages.editorLanguage(), dataLanguageChoices());
+        outputPanel.refreshLanguageOptions(messages.editorLanguage(), outputLanguageChoices());
         refreshJsonStatus();
         refreshTemplateStatus();
         refreshExpectedFieldsSummary();

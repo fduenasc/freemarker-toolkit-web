@@ -11,6 +11,23 @@ import com.fduenasc.infrastructure.helpers.UserPreferences;
  */
 public final class Messages {
 
+    /**
+     * FreeMarker syntax label (not localized).
+     */
+    public static final String LANGUAGE_FREEMARKER = "FreeMarker";
+    /**
+     * JSON syntax label (not localized).
+     */
+    public static final String LANGUAGE_JSON = "JSON";
+    /**
+     * XML syntax label (not localized).
+     */
+    public static final String LANGUAGE_XML = "XML";
+    /**
+     * HTML syntax label (not localized).
+     */
+    public static final String LANGUAGE_HTML = "HTML";
+
     private final UserPreferences preferences;
 
     /**
@@ -441,6 +458,24 @@ public final class Messages {
      */
     public String settingsLanguage() {
         return es() ? "Idioma de la interfaz" : "UI language";
+    }
+
+    /**
+     * Gets the editor syntax language selector label.
+     *
+     * @return the editor language label.
+     */
+    public String editorLanguage() {
+        return es() ? "Lenguaje" : "Language";
+    }
+
+    /**
+     * Gets the plain text syntax label.
+     *
+     * @return the plain text label.
+     */
+    public String languagePlaintext() {
+        return es() ? "Texto plano" : "Plain text";
     }
 
     /**
