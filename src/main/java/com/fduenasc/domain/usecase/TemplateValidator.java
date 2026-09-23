@@ -212,9 +212,9 @@ public class TemplateValidator {
         for (int i = tagStart + 1; i < template.length(); i++) {
             char current = template.charAt(i);
             if (inSingleQuote) {
-                inSingleQuote = !isUnescapedQuoteAt(template, i, '\'');
+                inSingleQuote = remainsInsideQuote(template, i, '\'');
             } else if (inDoubleQuote) {
-                inDoubleQuote = !isUnescapedQuoteAt(template, i, '"');
+                inDoubleQuote = remainsInsideQuote(template, i, '"');
             } else if (current == '\'') {
                 inSingleQuote = true;
             } else if (current == '"') {
@@ -229,8 +229,8 @@ public class TemplateValidator {
         return -1;
     }
 
-    private static boolean isUnescapedQuoteAt(String template, int index, char quote) {
-        return template.charAt(index) == quote && template.charAt(index - 1) != '\\';
+    private static boolean remainsInsideQuote(String template, int index, char quote) {
+        return template.charAt(index) != quote || template.charAt(index - 1) == '\\';
     }
 
     private static int adjustParenDepth(int parenDepth, char current) {
