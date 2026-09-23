@@ -109,15 +109,6 @@ public final class Messages {
     }
 
     /**
-     * Gets the format template button text.
-     *
-     * @return the format template button text.
-     */
-    public String formatTemplate() {
-        return es() ? "Formatear plantilla" : "Format template";
-    }
-
-    /**
      * Gets the single line button text.
      *
      * @return the single line button text.

@@ -31,6 +31,43 @@ if (!globalThis.__monacoThemeObserver) {
     });
 }
 
+const FREEMARKER_LANGUAGE_IDS = [
+    'freemarker2',
+    'freemarker2.tag-angle.interpolation-dollar',
+    'freemarker2.tag-bracket.interpolation-dollar',
+    'freemarker2.tag-angle.interpolation-bracket',
+    'freemarker2.tag-bracket.interpolation-bracket',
+    'freemarker2.tag-auto.interpolation-dollar',
+    'freemarker2.tag-auto.interpolation-bracket'
+];
+
+if (!globalThis.__freemarkerFormatProvidersRegistered) {
+    globalThis.__freemarkerFormatProvidersRegistered = true;
+    const provider = {
+        displayName: 'FreeMarker Toolkit',
+        provideDocumentFormattingEdits(model) {
+            const matched = monaco.editor.getEditors().find((ed) => ed.getModel() === model);
+            const dom = matched?.getDomNode?.() || matched?.getContainerDomNode?.();
+            const host = dom?.closest?.('monaco-code-editor');
+            if (!host || typeof host.requestFormat !== 'function') {
+                return [];
+            }
+            return host.requestFormat().then((formatted) => {
+                if (formatted == null || formatted === model.getValue()) {
+                    return [];
+                }
+                return [{
+                    range: model.getFullModelRange(),
+                    text: formatted
+                }];
+            });
+        }
+    };
+    for (const languageId of FREEMARKER_LANGUAGE_IDS) {
+        monaco.languages.registerDocumentFormattingEditProvider(languageId, provider);
+    }
+}
+
 class MonacoCodeEditor extends HTMLElement {
 
     constructor() {
@@ -44,6 +81,8 @@ class MonacoCodeEditor extends HTMLElement {
         this._applying = false;
         this._editor = null;
         this._timer = 0;
+        this._pendingFormatResolve = null;
+        this._formatTimeout = 0;
         this._onPointerDown = (event) => {
             const target = event.target;
             if (target instanceof Element && target.closest('vaadin-button, vaadin-menu-bar-item')) {
@@ -98,6 +137,11 @@ class MonacoCodeEditor extends HTMLElement {
     disconnectedCallback() {
         document.removeEventListener('pointerdown', this._onPointerDown, true);
         clearTimeout(this._timer);
+        clearTimeout(this._formatTimeout);
+        if (this._pendingFormatResolve) {
+            this._pendingFormatResolve(null);
+            this._pendingFormatResolve = null;
+        }
         if (this._editor) {
             this._editor.dispose();
             this._editor = null;
@@ -156,6 +200,48 @@ class MonacoCodeEditor extends HTMLElement {
     set label(next) {
         this._label = next == null ? '' : String(next);
         this._editor?.updateOptions({ariaLabel: this._label || 'Editor'});
+    }
+
+    /**
+     * Asks the server to format the current FreeMarker document.
+     *
+     * @returns {Promise<string|null>} formatted text, or null if cancelled/failed.
+     */
+    requestFormat() {
+        if (this._readOnly || !this._editor) {
+            return Promise.resolve(null);
+        }
+        this._value = this._editor.getValue();
+        this._lastEmitted = this._value;
+        return new Promise((resolve) => {
+            if (this._pendingFormatResolve) {
+                this._pendingFormatResolve(null);
+            }
+            this._pendingFormatResolve = resolve;
+            clearTimeout(this._formatTimeout);
+            this._formatTimeout = setTimeout(() => {
+                if (this._pendingFormatResolve === resolve) {
+                    this._pendingFormatResolve = null;
+                    resolve(null);
+                }
+            }, 10000);
+            this.dispatchEvent(new CustomEvent('format-request', {bubbles: true, composed: true}));
+        });
+    }
+
+    /**
+     * Completes a pending Format Document request with server-formatted text.
+     *
+     * @param {string|null} formatted formatted FreeMarker template.
+     */
+    completeFormat(formatted) {
+        clearTimeout(this._formatTimeout);
+        if (!this._pendingFormatResolve) {
+            return;
+        }
+        const resolve = this._pendingFormatResolve;
+        this._pendingFormatResolve = null;
+        resolve(formatted == null ? null : String(formatted));
     }
 
     _schedule() {

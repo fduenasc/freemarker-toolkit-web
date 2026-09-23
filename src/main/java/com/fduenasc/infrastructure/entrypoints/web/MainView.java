@@ -191,7 +191,7 @@ public class MainView extends VerticalLayout {
         EditorSection panel = new EditorSection(messages.panelTemplate());
         panel.setLanguageOptions(messages.editorLanguage(), templateLanguageChoices(), MonacoEditor.LANGUAGE_FREEMARKER);
         panel.setWordWrapLabel(messages.editorWordWrap());
-        panel.addAction(messages.formatTemplate(), this::formatTemplate);
+        panel.setDocumentFormatter(toolkitService::formatTemplate);
         panel.addAction(messages.singleLine(), this::setTemplateSingleLine);
         panel.onTextChange(text -> refreshTemplateStatus());
         return panel;
@@ -371,15 +371,6 @@ public class MainView extends VerticalLayout {
             validationResult.setText(messages.invalidJsonOutput());
             validationResult.getStyle().set(STYLE_COLOR, LUMO_ERROR_COLOR);
         }
-    }
-
-    /**
-     * Formats the template.
-     */
-    private void formatTemplate() {
-        String formatted = toolkitService.formatTemplate(templatePanel.getText());
-        templatePanel.setText(formatted);
-        refreshTemplateStatus();
     }
 
     /**

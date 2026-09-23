@@ -28,11 +28,14 @@ public class TemplateValidator {
     private final TemplateProcessor templateProcessor;
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private static final Pattern FREEMARKER_DIRECTIVE = Pattern.compile("(<#[^>]*+>)");
     private static final Pattern ASSIGN_MAP = Pattern.compile("(<#assign\\s+\\w+\\s*=\\s*)\\{([^}]*)}");
     private static final Pattern BRACE_BLOCK = Pattern.compile("\\{([^}]*)}");
     private static final Pattern COLON_WHITESPACE = Pattern.compile("\\s*:\\s*");
     private static final Pattern EDGE_WHITESPACE = Pattern.compile("(^\\s+)|(\\s+$)");
+    /**
+     * Starts of FreeMarker markup tags that Format Document may split onto their own line.
+     */
+    private static final String[] FREEMARKER_TAG_STARTS = {"</#", "<#", "</@", "<@"};
 
     public TemplateValidator(TemplateProcessor templateProcessor) {
         this.templateProcessor = templateProcessor;
@@ -124,7 +127,7 @@ public class TemplateValidator {
     }
 
     public static String formatFreemarkerTemplateCombined(String template) {
-        String formatted = FREEMARKER_DIRECTIVE.matcher(template).replaceAll("$1\n");
+        String formatted = insertNewlinesAfterFreemarkerTags(template == null ? "" : template);
 
         StringBuilder sb = new StringBuilder();
         Matcher matcher = ASSIGN_MAP.matcher(formatted);
@@ -148,6 +151,100 @@ public class TemplateValidator {
         }
         sb.append(formatted.substring(lastEnd));
         return sb.toString().replaceAll("[\\n\\r]+", "\n").replaceAll("\\n{2,}", "\n").trim();
+    }
+
+    /**
+     * Inserts a newline after each complete FreeMarker tag without treating {@code >}
+     * inside comparisons (e.g. {@code (score > 100)}) as the tag terminator.
+     *
+     * @param template the raw template.
+     * @return the template with newlines after FreeMarker tags.
+     */
+    private static String insertNewlinesAfterFreemarkerTags(String template) {
+        StringBuilder out = new StringBuilder(template.length() + 16);
+        int index = 0;
+        while (index < template.length()) {
+            int tagStart = indexOfFreemarkerTag(template, index);
+            if (tagStart < 0) {
+                out.append(template, index, template.length());
+                index = template.length();
+            } else {
+                out.append(template, index, tagStart);
+                int tagEnd = findFreemarkerTagEnd(template, tagStart);
+                if (tagEnd < 0) {
+                    out.append(template, tagStart, template.length());
+                    index = template.length();
+                } else {
+                    out.append(template, tagStart, tagEnd + 1);
+                    if (tagEnd + 1 >= template.length() || template.charAt(tagEnd + 1) != '\n') {
+                        out.append('\n');
+                    }
+                    index = tagEnd + 1;
+                }
+            }
+        }
+        return out.toString();
+    }
+
+    private static int indexOfFreemarkerTag(String template, int fromIndex) {
+        int best = -1;
+        for (String start : FREEMARKER_TAG_STARTS) {
+            int at = template.indexOf(start, fromIndex);
+            if (at >= 0 && (best < 0 || at < best)) {
+                best = at;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * Finds the closing {@code >} of a FreeMarker tag, ignoring {@code >} nested in
+     * parentheses or quoted strings.
+     *
+     * @param template the template.
+     * @param tagStart index of {@code <} starting the tag.
+     * @return index of the closing {@code >}, or {@code -1} if not found.
+     */
+    private static int findFreemarkerTagEnd(String template, int tagStart) {
+        int parenDepth = 0;
+        boolean inSingleQuote = false;
+        boolean inDoubleQuote = false;
+        for (int i = tagStart + 1; i < template.length(); i++) {
+            char current = template.charAt(i);
+            if (inSingleQuote) {
+                inSingleQuote = !isUnescapedQuoteAt(template, i, '\'');
+            } else if (inDoubleQuote) {
+                inDoubleQuote = !isUnescapedQuoteAt(template, i, '"');
+            } else if (current == '\'') {
+                inSingleQuote = true;
+            } else if (current == '"') {
+                inDoubleQuote = true;
+            } else {
+                parenDepth = adjustParenDepth(parenDepth, current);
+                if (isFreemarkerTagTerminator(current, parenDepth)) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    private static boolean isUnescapedQuoteAt(String template, int index, char quote) {
+        return template.charAt(index) == quote && template.charAt(index - 1) != '\\';
+    }
+
+    private static int adjustParenDepth(int parenDepth, char current) {
+        if (current == '(') {
+            return parenDepth + 1;
+        }
+        if (current == ')' && parenDepth > 0) {
+            return parenDepth - 1;
+        }
+        return parenDepth;
+    }
+
+    private static boolean isFreemarkerTagTerminator(char current, int parenDepth) {
+        return current == '>' && parenDepth == 0;
     }
 
     public static String toSingleLine(String template) {

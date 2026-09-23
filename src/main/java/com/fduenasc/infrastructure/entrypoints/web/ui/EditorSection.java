@@ -12,6 +12,7 @@ import com.vaadin.flow.shared.Registration;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
 /**
  * A section for editing text with a title, language selector, editor, status, and toolbar.
@@ -58,6 +59,10 @@ public class EditorSection extends VerticalLayout {
      * Registration for the text-change listener, if any.
      */
     private Registration textChangeRegistration;
+    /**
+     * Registration for Format Document requests, if any.
+     */
+    private Registration formatRequestRegistration;
     /**
      * The status label.
      */
@@ -259,6 +264,23 @@ public class EditorSection extends VerticalLayout {
             textChangeRegistration.remove();
         }
         textChangeRegistration = editor.addValueChangeListener(handler);
+    }
+
+    /**
+     * Wires Monaco Format Document to a server-side formatter (FreeMarker).
+     *
+     * @param formatter maps raw template text to formatted text.
+     */
+    public void setDocumentFormatter(UnaryOperator<String> formatter) {
+        if (formatRequestRegistration != null) {
+            formatRequestRegistration.remove();
+            formatRequestRegistration = null;
+        }
+        if (formatter == null) {
+            return;
+        }
+        formatRequestRegistration = editor.addFormatRequestListener(text ->
+                editor.completeFormat(formatter.apply(text == null ? "" : text)));
     }
 
     /**

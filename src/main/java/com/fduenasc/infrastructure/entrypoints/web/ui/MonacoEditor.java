@@ -153,6 +153,28 @@ public class MonacoEditor extends Component implements HasSize {
     }
 
     /**
+     * Listens for Monaco Format Document requests on FreeMarker content.
+     *
+     * @param listener receives the current editor text to format.
+     * @return the registration used to remove the listener.
+     */
+    public Registration addFormatRequestListener(Consumer<String> listener) {
+        return getElement().addEventListener("format-request", event -> {
+            value = readClientValue(event.getEventData());
+            listener.accept(value);
+        }).addEventData(EVENT_DATA_ELEMENT_VALUE);
+    }
+
+    /**
+     * Completes a pending Format Document request with formatted text.
+     *
+     * @param formatted the formatted FreeMarker template.
+     */
+    public void completeFormat(String formatted) {
+        getElement().callJsFunction("completeFormat", formatted == null ? "" : formatted);
+    }
+
+    /**
      * Reads the editor text from a Vaadin DOM event payload.
      *
      * @param data the event data.
