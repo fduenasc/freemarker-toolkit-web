@@ -6,13 +6,14 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.TextArea;
-import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.shared.Registration;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * A section for editing text with a title, editor, status label, and toolbar.
+ * A section for editing text with a title, language selector, editor, status, and toolbar.
  *
  * @author Francisco Dueñas
  * @since 0.1.0
@@ -20,13 +21,38 @@ import java.util.function.Consumer;
 public class EditorSection extends VerticalLayout {
 
     /**
+     * A selectable Monaco language option.
+     *
+     * @param id    Monaco language id.
+     * @param label display label.
+     */
+    public record LanguageChoice(String id, String label) {
+    }
+
+    /**
      * The title label.
      */
     private final Span titleLabel = new Span();
     /**
+     * The language selector label.
+     */
+    private final Span languageLabel = new Span();
+    /**
+     * The language selector.
+     */
+    private final Select<LanguageChoice> languageSelect = new Select<>();
+    /**
+     * The language selector row.
+     */
+    private final HorizontalLayout languageRow = new HorizontalLayout();
+    /**
      * The editor.
      */
-    private final TextArea editor = new TextArea();
+    private final MonacoEditor editor = new MonacoEditor();
+    /**
+     * Registration for the text-change listener, if any.
+     */
+    private Registration textChangeRegistration;
     /**
      * The status label.
      */
@@ -50,11 +76,31 @@ public class EditorSection extends VerticalLayout {
         titleLabel.setText(title);
         titleLabel.addClassName("editor-section-title");
 
+        languageLabel.addClassName("editor-language-label");
+        languageSelect.setItemLabelGenerator(LanguageChoice::label);
+        languageSelect.setWidth("11rem");
+        languageSelect.addClassName("editor-language-select");
+        languageSelect.addValueChangeListener(event -> {
+            if (event.getValue() != null) {
+                editor.setLanguage(event.getValue().id());
+            }
+        });
+
+        languageRow.setAlignItems(FlexComponent.Alignment.BASELINE);
+        languageRow.setSpacing(true);
+        languageRow.addClassName("editor-language-row");
+        languageRow.add(languageLabel, languageSelect);
+        languageRow.setVisible(false);
+
+        HorizontalLayout header = new HorizontalLayout(titleLabel, languageRow);
+        header.setWidthFull();
+        header.setAlignItems(FlexComponent.Alignment.CENTER);
+        header.expand(titleLabel);
+        header.addClassName("editor-section-header");
+
         editor.setWidthFull();
         editor.setHeight("100%");
-        editor.setValueChangeMode(ValueChangeMode.LAZY);
-        editor.setValueChangeTimeout(450);
-        editor.addClassName("editor-textarea");
+        editor.setLabel(title);
 
         statusLabel.addClassName("editor-status");
         statusLabel.getStyle().set("font-size", "var(--lumo-font-size-s)");
@@ -75,17 +121,61 @@ public class EditorSection extends VerticalLayout {
         editorWrapper.setSpacing(false);
         editorWrapper.expand(editor);
 
-        add(titleLabel, editorWrapper, toolbar);
+        add(header, editorWrapper, toolbar);
         expand(editorWrapper);
     }
 
     /**
-     * Gets the editor component.
+     * Shows a language selector with the given options.
      *
-     * @return the editor component.
+     * @param label    the selector label.
+     * @param choices  the available languages.
+     * @param selected the initially selected language id.
      */
-    public TextArea getEditor() {
-        return editor;
+    public void setLanguageOptions(String label, List<LanguageChoice> choices, String selected) {
+        languageLabel.setText(label);
+        languageSelect.setItems(choices);
+        languageRow.setVisible(choices != null && !choices.isEmpty());
+        selectLanguage(selected);
+    }
+
+    /**
+     * Updates the language selector label and option labels while keeping the selection.
+     *
+     * @param label   the selector label.
+     * @param choices the available languages with refreshed labels.
+     */
+    public void refreshLanguageOptions(String label, List<LanguageChoice> choices) {
+        String current = editor.getLanguage();
+        setLanguageOptions(label, choices, current);
+    }
+
+    /**
+     * Sets the Monaco language id and syncs the selector when present.
+     *
+     * @param language the language id.
+     */
+    public void setLanguage(String language) {
+        editor.setLanguage(language);
+        selectLanguage(language);
+    }
+
+    /**
+     * Gets the Monaco language id.
+     *
+     * @return the language id.
+     */
+    public String getLanguage() {
+        return editor.getLanguage();
+    }
+
+    /**
+     * Sets the minimum height of the editor.
+     *
+     * @param minHeight the CSS min-height.
+     */
+    public void setEditorMinHeight(String minHeight) {
+        editor.setMinHeight(minHeight);
     }
 
     /**
@@ -95,6 +185,7 @@ public class EditorSection extends VerticalLayout {
      */
     public void setTitle(String title) {
         titleLabel.setText(title);
+        editor.setLabel(title);
     }
 
     /**
@@ -121,7 +212,7 @@ public class EditorSection extends VerticalLayout {
      * @param text the text of the editor.
      */
     public void setText(String text) {
-        editor.setValue(text != null ? text : "");
+        editor.setValue(text);
     }
 
     /**
@@ -130,7 +221,10 @@ public class EditorSection extends VerticalLayout {
      * @param handler the text change handler.
      */
     public void onTextChange(Consumer<String> handler) {
-        editor.addValueChangeListener(e -> handler.accept(e.getValue()));
+        if (textChangeRegistration != null) {
+            textChangeRegistration.remove();
+        }
+        textChangeRegistration = editor.addValueChangeListener(handler);
     }
 
     /**
@@ -186,5 +280,23 @@ public class EditorSection extends VerticalLayout {
      */
     public void setStatusVisible(boolean visible) {
         statusLabel.setVisible(visible);
+    }
+
+    /**
+     * Selects the language option matching the given Monaco id.
+     *
+     * @param languageId the language id.
+     */
+    private void selectLanguage(String languageId) {
+        if (!languageRow.isVisible()) {
+            return;
+        }
+        languageSelect.getListDataView().getItems()
+                .filter(choice -> choice.id().equals(languageId))
+                .findFirst()
+                .ifPresentOrElse(
+                        languageSelect::setValue,
+                        () -> languageSelect.getListDataView().getItems().findFirst()
+                                .ifPresent(languageSelect::setValue));
     }
 }
