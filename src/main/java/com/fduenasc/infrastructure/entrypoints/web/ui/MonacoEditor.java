@@ -66,6 +66,7 @@ public class MonacoEditor extends Component implements HasSize {
     public MonacoEditor() {
         getElement().setProperty(PROPERTY_VALUE, "");
         getElement().setProperty("language", LANGUAGE_PLAINTEXT);
+        getElement().setProperty("wordWrap", true);
         setSizeFull();
         addClassName("monaco-editor-host");
     }
@@ -117,6 +118,15 @@ public class MonacoEditor extends Component implements HasSize {
      */
     public void setReadOnly(boolean readOnly) {
         getElement().setProperty("readOnly", readOnly);
+    }
+
+    /**
+     * Sets whether long lines wrap inside the editor.
+     *
+     * @param wordWrap {@code true} to wrap lines.
+     */
+    public void setWordWrap(boolean wordWrap) {
+        getElement().setProperty("wordWrap", wordWrap);
     }
 
     /**
