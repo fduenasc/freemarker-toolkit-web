@@ -1,40 +1,147 @@
 /*
-   FreeMarker JSON/XML Toolkit — web styles
+   FreeMarker Toolkit — IDE-style chrome
 */
 
-.toolkit-main {
+html, body, #outlet {
     height: 100%;
 }
 
-.toolkit-main-split,
-.toolkit-top-split {
+.toolkit-main {
+    height: 100%;
     min-height: 0;
+    background: var(--lumo-contrast-5pct);
+    box-sizing: border-box;
+}
+
+.toolkit-header {
+    flex: 0 0 auto;
+    align-items: center;
+    padding: 0.65rem 1rem;
+    gap: 1rem;
+    background: var(--lumo-base-color);
+    border-bottom: 1px solid var(--lumo-contrast-10pct);
+}
+
+.toolkit-brand-block {
+    gap: 0.1rem;
+}
+
+.toolkit-brand {
+    font-size: var(--lumo-font-size-l);
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    color: var(--lumo-header-text-color);
+    line-height: 1.2;
+}
+
+.toolkit-brand-meta {
+    font-size: var(--lumo-font-size-xxs);
+    color: var(--lumo-secondary-text-color);
+    letter-spacing: 0.02em;
+}
+
+.toolkit-header-actions {
+    flex-shrink: 0;
+}
+
+.toolkit-header-check {
+    font-size: var(--lumo-font-size-s);
+    color: var(--lumo-secondary-text-color);
+}
+
+.toolkit-workspace {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    flex: 1 1 auto;
+    min-height: 0;
+    box-sizing: border-box;
+}
+
+.toolkit-workspace > .editor-section {
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+}
+
+.panel-output {
+    grid-column: 1 / -1;
 }
 
 .editor-section {
+    display: flex;
+    flex-direction: column;
+    background: var(--lumo-base-color);
     border: 1px solid var(--lumo-contrast-10pct);
-    border-radius: var(--lumo-border-radius-m);
-    padding: var(--lumo-space-s);
+    border-radius: 8px;
+    overflow: hidden;
     min-height: 0;
-}
-
-.editor-section-title {
-    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .editor-section-header {
-    margin-bottom: var(--lumo-space-xs);
-    gap: var(--lumo-space-s);
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.4rem 0.65rem;
+    background: var(--lumo-contrast-5pct);
+    border-bottom: 1px solid var(--lumo-contrast-10pct);
+}
+
+.editor-section-title {
+    font-size: var(--lumo-font-size-s);
+    font-weight: 650;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    color: var(--lumo-secondary-text-color);
 }
 
 .editor-language-row {
     flex-shrink: 0;
+    gap: 0.35rem;
 }
 
 .editor-language-label {
+    font-size: var(--lumo-font-size-xs);
+    color: var(--lumo-tertiary-text-color);
+    white-space: nowrap;
+}
+
+.editor-language-select {
     font-size: var(--lumo-font-size-s);
+}
+
+.editor-wrap-toggle {
+    flex-shrink: 0;
+    font-size: var(--lumo-font-size-xs);
     color: var(--lumo-secondary-text-color);
     white-space: nowrap;
+}
+
+.editor-toolbar {
+    flex-shrink: 0;
+    gap: 0.25rem;
+}
+
+.editor-section-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.editor-footer {
+    flex: 0 0 auto;
+    min-height: 1.5rem;
+    padding: 0.25rem 0.65rem;
+    border-top: 1px solid var(--lumo-contrast-10pct);
+    background: var(--lumo-contrast-5pct);
+}
+
+.editor-status {
+    font-size: var(--lumo-font-size-xs);
+    font-family: var(--lumo-font-family);
 }
 
 monaco-code-editor {
@@ -43,36 +150,38 @@ monaco-code-editor {
     flex: 1 1 auto;
     width: 100%;
     height: 100%;
-    min-height: 12rem;
+    min-height: 0;
     overflow: hidden;
-    border: 1px solid var(--lumo-contrast-10pct);
-    border-radius: var(--lumo-border-radius-m);
+    border: none;
+    border-radius: 0;
+    background: var(--lumo-base-color);
 }
 
 monaco-code-editor .monaco-host {
     flex: 1 1 auto;
     width: 100%;
     height: 100%;
-    min-height: 12rem;
+    min-height: 0;
 }
 
-.editor-toolbar {
-    margin-top: var(--lumo-space-xs);
-    gap: var(--lumo-space-xs);
-}
-
-.editor-footer {
-    margin-top: var(--lumo-space-xs);
+.expected-fields-bar {
+    flex: 0 0 auto;
+    background: var(--lumo-base-color);
+    border-top: 1px solid var(--lumo-contrast-10pct);
+    padding: 0.45rem 1rem;
 }
 
 .expected-fields-footer {
-    border-top: 1px solid var(--lumo-contrast-10pct);
-    padding-top: var(--lumo-space-s);
-    gap: var(--lumo-space-m);
+    gap: 0.75rem;
+    align-items: center;
 }
 
 .expected-fields-title {
-    font-weight: 600;
+    font-size: var(--lumo-font-size-s);
+    font-weight: 650;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--lumo-secondary-text-color);
     white-space: nowrap;
 }
 
@@ -85,4 +194,17 @@ monaco-code-editor .monaco-host {
 .expected-fields-validation {
     flex-grow: 1;
     font-size: var(--lumo-font-size-s);
+}
+
+@media (max-width: 900px) {
+    .toolkit-workspace {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(14rem, 1fr) minmax(14rem, 1fr) minmax(12rem, 0.9fr);
+        padding: 0.5rem;
+        gap: 0.5rem;
+    }
+
+    .panel-output {
+        grid-column: auto;
+    }
 }
