@@ -7,3 +7,6 @@ The Apache Software Foundation (https://www.apache.org/).
 This product depends on third-party libraries that are licensed separately,
 including but not limited to FreeMarker, Quarkus, Vaadin, and Jackson
 (Apache License, Version 2.0).
+
+This product includes the Monaco Editor
+(https://github.com/microsoft/monaco-editor), licensed under the MIT License.
