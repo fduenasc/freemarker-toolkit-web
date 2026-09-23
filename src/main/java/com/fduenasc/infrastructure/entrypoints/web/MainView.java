@@ -5,7 +5,6 @@ import com.fduenasc.domain.model.FreemarkerTemplateSyntaxCheck;
 import com.fduenasc.domain.model.JsonSyntaxCheck;
 import com.fduenasc.domain.usecase.exception.DataModelException;
 import com.fduenasc.domain.usecase.exception.InvalidJsonException;
-import com.fduenasc.domain.usecase.exception.JsonFormatException;
 import com.fduenasc.domain.usecase.exception.TemplateProcessingException;
 import com.fduenasc.infrastructure.entrypoints.web.i18n.Messages;
 import com.fduenasc.infrastructure.entrypoints.web.ui.EditorSection;
@@ -21,7 +20,6 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -98,15 +96,6 @@ public class MainView extends VerticalLayout {
     private VerticalLayout expectedFieldsFooter;
 
     /**
-     * The last formatted data input.
-     */
-    private String lastFormattedDataInput = "";
-    /**
-     * The last formatted result output.
-     */
-    private String lastFormattedResultOutput = "";
-
-    /**
      * Constructs a new MainView instance.
      *
      * @param toolkitService the toolkit service.
@@ -141,7 +130,7 @@ public class MainView extends VerticalLayout {
     private void buildLayout() {
         removeAll();
 
-        brandTitle = new Span(messages.appTitle());
+        brandTitle = new Span(Messages.APP_TITLE);
         brandTitle.addClassName("toolkit-brand");
 
         Span brandMeta = new Span("Apache FreeMarker 2.3.34");
@@ -217,7 +206,6 @@ public class MainView extends VerticalLayout {
         EditorSection panel = new EditorSection(messages.panelDataModel());
         panel.setLanguageOptions(messages.editorLanguage(), dataLanguageChoices(), MonacoEditor.LANGUAGE_JSON);
         panel.setWordWrapLabel(messages.editorWordWrap());
-        panel.addAction(messages.formatJson(), this::formatDataModel);
         panel.onTextChange(text -> refreshJsonStatus());
         return panel;
     }
@@ -234,7 +222,6 @@ public class MainView extends VerticalLayout {
         panel.setReadOnly(true);
         panel.setStatusVisible(false);
         panel.addPrimaryAction(messages.processTemplate(), this::processTemplate);
-        panel.addAction(messages.formatJson(), this::formatOutput);
         panel.addAction(messages.clearOutput(), () -> panel.setText(""));
         return panel;
     }
@@ -331,7 +318,6 @@ public class MainView extends VerticalLayout {
         try {
             String output = toolkitService.processTemplate(template, dataPanel.getText());
             outputPanel.setText(output);
-            lastFormattedResultOutput = "";
         } catch (TemplateProcessingException | DataModelException ex) {
             outputPanel.setText(messages.errorProcessingTemplate() + ex.getMessage());
         }
@@ -384,41 +370,6 @@ public class MainView extends VerticalLayout {
         } catch (InvalidJsonException e) {
             validationResult.setText(messages.invalidJsonOutput());
             validationResult.getStyle().set(STYLE_COLOR, LUMO_ERROR_COLOR);
-        }
-    }
-
-    /**
-     * Formats the data model.
-     */
-    private void formatDataModel() {
-        String current = dataPanel.getText();
-        if (current.equals(lastFormattedDataInput)) {
-            return;
-        }
-        try {
-            String formatted = toolkitService.formatJson(current);
-            dataPanel.setText(formatted);
-            lastFormattedDataInput = formatted;
-            refreshJsonStatus();
-        } catch (JsonFormatException ex) {
-            Notification.show(messages.formatJsonError() + ": " + ex.getMessage(), 5000, Notification.Position.MIDDLE);
-        }
-    }
-
-    /**
-     * Formats the output.
-     */
-    private void formatOutput() {
-        String current = outputPanel.getText();
-        if (current.equals(lastFormattedResultOutput) || current.isBlank()) {
-            return;
-        }
-        try {
-            String formatted = toolkitService.formatJson(current);
-            outputPanel.setText(formatted);
-            lastFormattedResultOutput = formatted;
-        } catch (JsonFormatException ex) {
-            Notification.show(messages.formatJsonError() + ": " + ex.getMessage(), 5000, Notification.Position.MIDDLE);
         }
     }
 
@@ -514,7 +465,7 @@ public class MainView extends VerticalLayout {
     private void refreshAllChrome() {
         UI.getCurrent().getPage().setTitle(messages.windowTitle());
         if (brandTitle != null) {
-            brandTitle.setText(messages.appTitle());
+            brandTitle.setText(Messages.APP_TITLE);
         }
         templatePanel.setTitle(messages.panelTemplate());
         dataPanel.setTitle(messages.panelDataModel());

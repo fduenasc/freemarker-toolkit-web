@@ -3,16 +3,12 @@ package com.fduenasc.domain.usecase;
 import com.fasterxml.jackson.core.JsonLocation;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.core.util.DefaultIndenter;
-import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fduenasc.domain.model.JsonSyntaxCheck;
 import com.fduenasc.domain.model.MessageKeys;
 import com.fduenasc.domain.usecase.exception.DataModelException;
 import com.fduenasc.domain.usecase.exception.InvalidJsonException;
-import com.fduenasc.domain.usecase.exception.JsonFormatException;
 import com.fduenasc.domain.usecase.exception.TemplateProcessingException;
 
 import java.util.ArrayList;
@@ -31,10 +27,6 @@ public class TemplateValidator {
 
     private final TemplateProcessor templateProcessor;
     private static final ObjectMapper MAPPER = new ObjectMapper();
-
-    private static final ObjectWriter PRETTY_JSON_WRITER = MAPPER.writer(new DefaultPrettyPrinter()
-            .withObjectIndenter(new DefaultIndenter("  ", DefaultIndenter.SYS_LF))
-            .withArrayIndenter(new DefaultIndenter("  ", DefaultIndenter.SYS_LF)));
 
     private static final Pattern FREEMARKER_DIRECTIVE = Pattern.compile("(<#[^>]*+>)");
     private static final Pattern ASSIGN_MAP = Pattern.compile("(<#assign\\s+\\w+\\s*=\\s*)\\{([^}]*)}");
@@ -129,34 +121,6 @@ public class TemplateValidator {
             String msg = e.getOriginalMessage() != null ? e.getOriginalMessage() : e.getMessage();
             return new JsonSyntaxCheck(false, msg != null ? msg : MessageKeys.JSON_PARSE_FALLBACK, line, col);
         }
-    }
-
-    public static String formatFlexibleJson(String input) {
-        try {
-            Object json = MAPPER.readValue(input, Object.class);
-            return normalizePrettyJson(PRETTY_JSON_WRITER.writeValueAsString(json));
-        } catch (JsonProcessingException e1) {
-            try {
-                String toParse = input;
-                if (toParse.trim().startsWith("{") && toParse.contains("\\\"") && !toParse.trim().startsWith("\"")) {
-                    toParse = "\"" + toParse + "\"";
-                }
-                String unescaped = MAPPER.readValue(toParse, String.class);
-                Object json = MAPPER.readValue(unescaped, Object.class);
-                return normalizePrettyJson(PRETTY_JSON_WRITER.writeValueAsString(json));
-            } catch (JsonProcessingException e2) {
-                String detail = e2.getOriginalMessage() != null ? e2.getOriginalMessage() : e2.getMessage();
-                throw new JsonFormatException(detail != null ? detail : MessageKeys.JSON_PARSE_FALLBACK, e2);
-            }
-        }
-    }
-
-    private static String normalizePrettyJson(String pretty) {
-        String s = pretty.replace("\r\n", "\n");
-        if (!s.endsWith("\n")) {
-            s = s + "\n";
-        }
-        return s;
     }
 
     public static String formatFreemarkerTemplateCombined(String template) {

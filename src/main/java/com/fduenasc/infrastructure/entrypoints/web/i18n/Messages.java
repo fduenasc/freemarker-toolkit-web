@@ -27,6 +27,10 @@ public final class Messages {
      * HTML syntax label (not localized).
      */
     public static final String LANGUAGE_HTML = "HTML";
+    /**
+     * Compact application title shown in the header bar (not localized).
+     */
+    public static final String APP_TITLE = "FreeMarker Toolkit";
 
     private final UserPreferences preferences;
 
@@ -57,15 +61,6 @@ public final class Messages {
         return es()
                 ? "Kit FreeMarker JSON/XML (Apache FreeMarker 2.3.34)"
                 : "FreeMarker JSON/XML Toolkit (Apache FreeMarker 2.3.34)";
-    }
-
-    /**
-     * Gets the compact application title shown in the header bar.
-     *
-     * @return the application title.
-     */
-    public String appTitle() {
-        return "FreeMarker Toolkit";
     }
 
     /**
@@ -111,15 +106,6 @@ public final class Messages {
      */
     public String processTemplate() {
         return es() ? "Procesar plantilla" : "Process template";
-    }
-
-    /**
-     * Gets the format JSON button text.
-     *
-     * @return the format JSON button text.
-     */
-    public String formatJson() {
-        return es() ? "Formatear JSON" : "Format JSON";
     }
 
     /**
@@ -339,15 +325,6 @@ public final class Messages {
             case MessageKeys.JSON_PARSE_FALLBACK -> es() ? "Error de análisis JSON" : "JSON parse error";
             default -> key;
         };
-    }
-
-    /**
-     * Gets the format JSON error button text.
-     *
-     * @return the format JSON error button text.
-     */
-    public String formatJsonError() {
-        return es() ? "Error al formatear JSON" : "JSON format error";
     }
 
     /**
