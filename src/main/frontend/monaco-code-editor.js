@@ -38,6 +38,7 @@ class MonacoCodeEditor extends HTMLElement {
         this._value = '';
         this._language = 'plaintext';
         this._readOnly = false;
+        this._wordWrap = true;
         this._label = '';
         this._lastEmitted = '';
         this._applying = false;
@@ -68,11 +69,19 @@ class MonacoCodeEditor extends HTMLElement {
             fixedOverflowWidgets: true,
             minimap: {enabled: false},
             fontSize: 13,
-            fontFamily: 'Consolas, "Courier New", monospace',
+            fontFamily: 'Consolas, "Cascadia Code", "Courier New", monospace',
+            lineHeight: 20,
             scrollBeyondLastLine: false,
-            wordWrap: 'on',
+            wordWrap: this._wordWrap ? 'on' : 'off',
             tabSize: 2,
-            padding: {top: 8, bottom: 8},
+            renderLineHighlight: 'line',
+            overviewRulerLanes: 0,
+            hideCursorInOverviewRuler: true,
+            scrollbar: {
+                verticalScrollbarSize: 10,
+                horizontalScrollbarSize: 10
+            },
+            padding: {top: 10, bottom: 10},
             ariaLabel: this._label || 'Editor'
         });
         applyMonacoTheme();
@@ -129,6 +138,15 @@ class MonacoCodeEditor extends HTMLElement {
     set readOnly(next) {
         this._readOnly = next === true || next === 'true';
         this._editor?.updateOptions({readOnly: this._readOnly});
+    }
+
+    get wordWrap() {
+        return this._wordWrap;
+    }
+
+    set wordWrap(next) {
+        this._wordWrap = next === true || next === 'true';
+        this._editor?.updateOptions({wordWrap: this._wordWrap ? 'on' : 'off'});
     }
 
     get label() {
