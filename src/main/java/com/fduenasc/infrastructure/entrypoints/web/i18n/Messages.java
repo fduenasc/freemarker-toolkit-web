@@ -60,6 +60,15 @@ public final class Messages {
     }
 
     /**
+     * Gets the compact application title shown in the header bar.
+     *
+     * @return the application title.
+     */
+    public String appTitle() {
+        return "FreeMarker Toolkit";
+    }
+
+    /**
      * Gets the template panel title.
      *
      * @return the template panel title.
@@ -467,6 +476,15 @@ public final class Messages {
      */
     public String editorLanguage() {
         return es() ? "Lenguaje" : "Language";
+    }
+
+    /**
+     * Gets the word-wrap toggle label for editors.
+     *
+     * @return the word-wrap label.
+     */
+    public String editorWordWrap() {
+        return es() ? "Ajuste de línea" : "Word wrap";
     }
 
     /**
