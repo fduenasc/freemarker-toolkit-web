@@ -180,16 +180,6 @@ public class EditorSection extends VerticalLayout {
     }
 
     /**
-     * Sets whether long lines wrap inside the editor.
-     *
-     * @param wordWrap {@code true} to wrap lines.
-     */
-    public void setWordWrap(boolean wordWrap) {
-        wordWrapToggle.setValue(wordWrap);
-        editor.setWordWrap(wordWrap);
-    }
-
-    /**
      * Sets the Monaco language id and syncs the selector when present.
      *
      * @param language the language id.
@@ -206,15 +196,6 @@ public class EditorSection extends VerticalLayout {
      */
     public String getLanguage() {
         return editor.getLanguage();
-    }
-
-    /**
-     * Sets the minimum height of the editor.
-     *
-     * @param minHeight the CSS min-height.
-     */
-    public void setEditorMinHeight(String minHeight) {
-        editor.setMinHeight(minHeight);
     }
 
     /**
