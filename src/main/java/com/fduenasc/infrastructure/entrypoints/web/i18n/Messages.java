@@ -27,6 +27,10 @@ public final class Messages {
      * HTML syntax label (not localized).
      */
     public static final String LANGUAGE_HTML = "HTML";
+    /**
+     * Compact application title shown in the header bar (not localized).
+     */
+    public static final String APP_TITLE = "FreeMarker Toolkit";
 
     private final UserPreferences preferences;
 
@@ -102,24 +106,6 @@ public final class Messages {
      */
     public String processTemplate() {
         return es() ? "Procesar plantilla" : "Process template";
-    }
-
-    /**
-     * Gets the format JSON button text.
-     *
-     * @return the format JSON button text.
-     */
-    public String formatJson() {
-        return es() ? "Formatear JSON" : "Format JSON";
-    }
-
-    /**
-     * Gets the format template button text.
-     *
-     * @return the format template button text.
-     */
-    public String formatTemplate() {
-        return es() ? "Formatear plantilla" : "Format template";
     }
 
     /**
@@ -333,15 +319,6 @@ public final class Messages {
     }
 
     /**
-     * Gets the format JSON error button text.
-     *
-     * @return the format JSON error button text.
-     */
-    public String formatJsonError() {
-        return es() ? "Error al formatear JSON" : "JSON format error";
-    }
-
-    /**
      * Gets the expected fields dialog title button text.
      *
      * @return the expected fields dialog title button text.
@@ -467,6 +444,15 @@ public final class Messages {
      */
     public String editorLanguage() {
         return es() ? "Lenguaje" : "Language";
+    }
+
+    /**
+     * Gets the word-wrap toggle label for editors.
+     *
+     * @return the word-wrap label.
+     */
+    public String editorWordWrap() {
+        return es() ? "Ajuste de línea" : "Word wrap";
     }
 
     /**

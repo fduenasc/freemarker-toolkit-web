@@ -82,16 +82,6 @@ public class ToolkitService {
     }
 
     /**
-     * Formats the JSON.
-     *
-     * @param json the JSON.
-     * @return the formatted JSON.
-     */
-    public String formatJson(String json) {
-        return TemplateValidator.formatFlexibleJson(json);
-    }
-
-    /**
      * Formats the template.
      *
      * @param template the template.

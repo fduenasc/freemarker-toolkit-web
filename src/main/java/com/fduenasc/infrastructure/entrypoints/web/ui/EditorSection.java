@@ -2,6 +2,7 @@ package com.fduenasc.infrastructure.entrypoints.web.ui;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -11,6 +12,7 @@ import com.vaadin.flow.shared.Registration;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
 /**
  * A section for editing text with a title, language selector, editor, status, and toolbar.
@@ -46,6 +48,10 @@ public class EditorSection extends VerticalLayout {
      */
     private final HorizontalLayout languageRow = new HorizontalLayout();
     /**
+     * Word-wrap toggle for this editor.
+     */
+    private final Checkbox wordWrapToggle = new Checkbox();
+    /**
      * The editor.
      */
     private final MonacoEditor editor = new MonacoEditor();
@@ -53,6 +59,10 @@ public class EditorSection extends VerticalLayout {
      * Registration for the text-change listener, if any.
      */
     private Registration textChangeRegistration;
+    /**
+     * Registration for Format Document requests, if any.
+     */
+    private Registration formatRequestRegistration;
     /**
      * The status label.
      */
@@ -78,7 +88,7 @@ public class EditorSection extends VerticalLayout {
 
         languageLabel.addClassName("editor-language-label");
         languageSelect.setItemLabelGenerator(LanguageChoice::label);
-        languageSelect.setWidth("11rem");
+        languageSelect.setWidth("9.5rem");
         languageSelect.addClassName("editor-language-select");
         languageSelect.addValueChangeListener(event -> {
             if (event.getValue() != null) {
@@ -86,14 +96,27 @@ public class EditorSection extends VerticalLayout {
             }
         });
 
-        languageRow.setAlignItems(FlexComponent.Alignment.BASELINE);
+        languageRow.setAlignItems(FlexComponent.Alignment.CENTER);
         languageRow.setSpacing(true);
+        languageRow.setPadding(false);
         languageRow.addClassName("editor-language-row");
         languageRow.add(languageLabel, languageSelect);
         languageRow.setVisible(false);
 
-        HorizontalLayout header = new HorizontalLayout(titleLabel, languageRow);
+        wordWrapToggle.setValue(true);
+        wordWrapToggle.addClassName("editor-wrap-toggle");
+        wordWrapToggle.addValueChangeListener(event -> editor.setWordWrap(Boolean.TRUE.equals(event.getValue())));
+        editor.setWordWrap(true);
+
+        toolbar.setAlignItems(FlexComponent.Alignment.CENTER);
+        toolbar.setSpacing(true);
+        toolbar.setPadding(false);
+        toolbar.addClassName("editor-toolbar");
+
+        HorizontalLayout header = new HorizontalLayout(titleLabel, languageRow, wordWrapToggle, toolbar);
         header.setWidthFull();
+        header.setPadding(false);
+        header.setSpacing(true);
         header.setAlignItems(FlexComponent.Alignment.CENTER);
         header.expand(titleLabel);
         header.addClassName("editor-section-header");
@@ -101,28 +124,25 @@ public class EditorSection extends VerticalLayout {
         editor.setWidthFull();
         editor.setHeight("100%");
         editor.setLabel(title);
+        editor.addClassName("editor-body");
 
         statusLabel.addClassName("editor-status");
-        statusLabel.getStyle().set("font-size", "var(--lumo-font-size-s)");
-
-        toolbar.setWidthFull();
-        toolbar.setAlignItems(FlexComponent.Alignment.CENTER);
-        toolbar.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
-        toolbar.addClassName("editor-toolbar");
 
         HorizontalLayout footer = new HorizontalLayout(statusLabel);
         footer.setWidthFull();
+        footer.setPadding(false);
         footer.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
         footer.addClassName("editor-footer");
 
-        VerticalLayout editorWrapper = new VerticalLayout(editor, footer);
-        editorWrapper.setSizeFull();
-        editorWrapper.setPadding(false);
-        editorWrapper.setSpacing(false);
-        editorWrapper.expand(editor);
+        VerticalLayout body = new VerticalLayout(editor);
+        body.setSizeFull();
+        body.setPadding(false);
+        body.setSpacing(false);
+        body.addClassName("editor-section-body");
+        body.expand(editor);
 
-        add(header, editorWrapper, toolbar);
-        expand(editorWrapper);
+        add(header, body, footer);
+        expand(body);
     }
 
     /**
@@ -151,6 +171,15 @@ public class EditorSection extends VerticalLayout {
     }
 
     /**
+     * Sets the word-wrap checkbox label.
+     *
+     * @param label the wrap label.
+     */
+    public void setWordWrapLabel(String label) {
+        wordWrapToggle.setLabel(label);
+    }
+
+    /**
      * Sets the Monaco language id and syncs the selector when present.
      *
      * @param language the language id.
@@ -167,15 +196,6 @@ public class EditorSection extends VerticalLayout {
      */
     public String getLanguage() {
         return editor.getLanguage();
-    }
-
-    /**
-     * Sets the minimum height of the editor.
-     *
-     * @param minHeight the CSS min-height.
-     */
-    public void setEditorMinHeight(String minHeight) {
-        editor.setMinHeight(minHeight);
     }
 
     /**
@@ -228,13 +248,30 @@ public class EditorSection extends VerticalLayout {
     }
 
     /**
+     * Wires Monaco Format Document to a server-side formatter (FreeMarker).
+     *
+     * @param formatter maps raw template text to formatted text.
+     */
+    public void setDocumentFormatter(UnaryOperator<String> formatter) {
+        if (formatRequestRegistration != null) {
+            formatRequestRegistration.remove();
+            formatRequestRegistration = null;
+        }
+        if (formatter == null) {
+            return;
+        }
+        formatRequestRegistration = editor.addFormatRequestListener(text ->
+                editor.completeFormat(formatter.apply(text == null ? "" : text)));
+    }
+
+    /**
      * Adds an action button to the toolbar.
      *
      * @param label  the label of the button.
      * @param action the action to perform when the button is clicked.
      */
     public void addAction(String label, Runnable action) {
-        addAction(label, action, ButtonVariant.LUMO_TERTIARY);
+        addAction(label, action, ButtonVariant.LUMO_TERTIARY_INLINE);
     }
 
     /**
@@ -256,7 +293,7 @@ public class EditorSection extends VerticalLayout {
      */
     private void addAction(String label, Runnable action, ButtonVariant variant) {
         Button button = new Button(label, e -> action.run());
-        button.addThemeVariants(variant);
+        button.addThemeVariants(variant, ButtonVariant.LUMO_SMALL);
         toolbar.add(button);
     }
 
@@ -280,6 +317,7 @@ public class EditorSection extends VerticalLayout {
      */
     public void setStatusVisible(boolean visible) {
         statusLabel.setVisible(visible);
+        statusLabel.getParent().ifPresent(parent -> parent.setVisible(visible));
     }
 
     /**

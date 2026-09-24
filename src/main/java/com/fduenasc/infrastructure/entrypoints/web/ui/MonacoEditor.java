@@ -66,6 +66,7 @@ public class MonacoEditor extends Component implements HasSize {
     public MonacoEditor() {
         getElement().setProperty(PROPERTY_VALUE, "");
         getElement().setProperty("language", LANGUAGE_PLAINTEXT);
+        getElement().setProperty("wordWrap", true);
         setSizeFull();
         addClassName("monaco-editor-host");
     }
@@ -120,6 +121,15 @@ public class MonacoEditor extends Component implements HasSize {
     }
 
     /**
+     * Sets whether long lines wrap inside the editor.
+     *
+     * @param wordWrap {@code true} to wrap lines.
+     */
+    public void setWordWrap(boolean wordWrap) {
+        getElement().setProperty("wordWrap", wordWrap);
+    }
+
+    /**
      * Sets the accessible name announced by the editor.
      *
      * @param label the accessible name.
@@ -140,6 +150,28 @@ public class MonacoEditor extends Component implements HasSize {
             value = readClientValue(event.getEventData());
             listener.accept(value);
         }).addEventData(EVENT_DATA_ELEMENT_VALUE);
+    }
+
+    /**
+     * Listens for Monaco Format Document requests on FreeMarker content.
+     *
+     * @param listener receives the current editor text to format.
+     * @return the registration used to remove the listener.
+     */
+    public Registration addFormatRequestListener(Consumer<String> listener) {
+        return getElement().addEventListener("format-request", event -> {
+            value = readClientValue(event.getEventData());
+            listener.accept(value);
+        }).addEventData(EVENT_DATA_ELEMENT_VALUE);
+    }
+
+    /**
+     * Completes a pending Format Document request with formatted text.
+     *
+     * @param formatted the formatted FreeMarker template.
+     */
+    public void completeFormat(String formatted) {
+        getElement().callJsFunction("completeFormat", formatted == null ? "" : formatted);
     }
 
     /**

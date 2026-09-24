@@ -5,7 +5,6 @@ import com.fduenasc.domain.model.FreemarkerTemplateSyntaxCheck;
 import com.fduenasc.domain.model.JsonSyntaxCheck;
 import com.fduenasc.domain.usecase.exception.DataModelException;
 import com.fduenasc.domain.usecase.exception.InvalidJsonException;
-import com.fduenasc.domain.usecase.exception.JsonFormatException;
 import com.fduenasc.domain.usecase.exception.TemplateProcessingException;
 import com.fduenasc.infrastructure.entrypoints.web.i18n.Messages;
 import com.fduenasc.infrastructure.entrypoints.web.ui.EditorSection;
@@ -17,15 +16,13 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
-import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.PostConstruct;
@@ -70,6 +67,10 @@ public class MainView extends VerticalLayout {
      */
     private transient Messages messages;
     /**
+     * The compact brand title in the header.
+     */
+    private Span brandTitle;
+    /**
      * The template panel.
      */
     private EditorSection templatePanel;
@@ -95,15 +96,6 @@ public class MainView extends VerticalLayout {
     private VerticalLayout expectedFieldsFooter;
 
     /**
-     * The last formatted data input.
-     */
-    private String lastFormattedDataInput = "";
-    /**
-     * The last formatted result output.
-     */
-    private String lastFormattedResultOutput = "";
-
-    /**
      * Constructs a new MainView instance.
      *
      * @param toolkitService the toolkit service.
@@ -122,8 +114,8 @@ public class MainView extends VerticalLayout {
     void init() {
         messages = new Messages(preferences);
         setSizeFull();
-        setPadding(true);
-        setSpacing(true);
+        setPadding(false);
+        setSpacing(false);
         addClassName("toolkit-main");
 
         UI.getCurrent().getPage().setTitle(messages.windowTitle());
@@ -138,46 +130,56 @@ public class MainView extends VerticalLayout {
     private void buildLayout() {
         removeAll();
 
+        brandTitle = new Span(Messages.APP_TITLE);
+        brandTitle.addClassName("toolkit-brand");
+
+        Span brandMeta = new Span("Apache FreeMarker 2.3.34");
+        brandMeta.addClassName("toolkit-brand-meta");
+
+        VerticalLayout brandBlock = new VerticalLayout(brandTitle, brandMeta);
+        brandBlock.setPadding(false);
+        brandBlock.setSpacing(false);
+        brandBlock.addClassName("toolkit-brand-block");
+
         MenuBar menuBar = new MenuBar();
         menuBar.addThemeVariants(MenuBarVariant.LUMO_TERTIARY_INLINE);
         menuBar.addItem(messages.settings(), e -> openSettings());
 
         Checkbox showExpectedFields = new Checkbox(messages.showExpectedFields(), preferences.isExpectedFieldsVisible());
+        showExpectedFields.addClassName("toolkit-header-check");
         showExpectedFields.addValueChangeListener(e -> {
             preferences.setExpectedFieldsVisible(e.getValue());
             expectedFieldsFooter.setVisible(e.getValue());
         });
 
-        HorizontalLayout header = new HorizontalLayout(
-                new H2(messages.windowTitle()),
-                menuBar,
-                showExpectedFields
-        );
+        HorizontalLayout headerActions = new HorizontalLayout(showExpectedFields, menuBar);
+        headerActions.setAlignItems(FlexComponent.Alignment.CENTER);
+        headerActions.setSpacing(true);
+        headerActions.setPadding(false);
+        headerActions.addClassName("toolkit-header-actions");
+
+        HorizontalLayout header = new HorizontalLayout(brandBlock, headerActions);
         header.setWidthFull();
         header.setAlignItems(FlexComponent.Alignment.CENTER);
-        header.expand(header.getComponentAt(0));
+        header.expand(brandBlock);
+        header.addClassName("toolkit-header");
 
         templatePanel = createTemplatePanel();
+        templatePanel.addClassName("panel-template");
         dataPanel = createDataPanel();
+        dataPanel.addClassName("panel-data");
         outputPanel = createOutputPanel();
+        outputPanel.addClassName("panel-output");
 
-        SplitLayout topSplit = new SplitLayout(templatePanel, dataPanel);
-        topSplit.setOrientation(SplitLayout.Orientation.HORIZONTAL);
-        topSplit.setSplitterPosition(50);
-        topSplit.setSizeFull();
-        topSplit.addClassName("toolkit-top-split");
-
-        SplitLayout mainSplit = new SplitLayout(topSplit, outputPanel);
-        mainSplit.setOrientation(SplitLayout.Orientation.VERTICAL);
-        mainSplit.setSplitterPosition(60);
-        mainSplit.setSizeFull();
-        mainSplit.addClassName("toolkit-main-split");
+        Div workspace = new Div(templatePanel, dataPanel, outputPanel);
+        workspace.addClassName("toolkit-workspace");
+        workspace.setSizeFull();
 
         expectedFieldsFooter = buildExpectedFieldsFooter();
         expectedFieldsFooter.setVisible(preferences.isExpectedFieldsVisible());
 
-        add(header, mainSplit, expectedFieldsFooter);
-        expand(mainSplit);
+        add(header, workspace, expectedFieldsFooter);
+        expand(workspace);
     }
 
     /**
@@ -188,8 +190,8 @@ public class MainView extends VerticalLayout {
     private EditorSection createTemplatePanel() {
         EditorSection panel = new EditorSection(messages.panelTemplate());
         panel.setLanguageOptions(messages.editorLanguage(), templateLanguageChoices(), MonacoEditor.LANGUAGE_FREEMARKER);
-        panel.setEditorMinHeight("200px");
-        panel.addAction(messages.formatTemplate(), this::formatTemplate);
+        panel.setWordWrapLabel(messages.editorWordWrap());
+        panel.setDocumentFormatter(toolkitService::formatTemplate);
         panel.addAction(messages.singleLine(), this::setTemplateSingleLine);
         panel.onTextChange(text -> refreshTemplateStatus());
         return panel;
@@ -203,8 +205,7 @@ public class MainView extends VerticalLayout {
     private EditorSection createDataPanel() {
         EditorSection panel = new EditorSection(messages.panelDataModel());
         panel.setLanguageOptions(messages.editorLanguage(), dataLanguageChoices(), MonacoEditor.LANGUAGE_JSON);
-        panel.setEditorMinHeight("200px");
-        panel.addAction(messages.formatJson(), this::formatDataModel);
+        panel.setWordWrapLabel(messages.editorWordWrap());
         panel.onTextChange(text -> refreshJsonStatus());
         return panel;
     }
@@ -217,11 +218,10 @@ public class MainView extends VerticalLayout {
     private EditorSection createOutputPanel() {
         EditorSection panel = new EditorSection(messages.panelRenderedResult());
         panel.setLanguageOptions(messages.editorLanguage(), outputLanguageChoices(), MonacoEditor.LANGUAGE_PLAINTEXT);
+        panel.setWordWrapLabel(messages.editorWordWrap());
         panel.setReadOnly(true);
-        panel.setEditorMinHeight("150px");
         panel.setStatusVisible(false);
         panel.addPrimaryAction(messages.processTemplate(), this::processTemplate);
-        panel.addAction(messages.formatJson(), this::formatOutput);
         panel.addAction(messages.clearOutput(), () -> panel.setText(""));
         return panel;
     }
@@ -283,8 +283,9 @@ public class MainView extends VerticalLayout {
 
         Button configure = new Button(messages.configure(), e ->
                 new ExpectedFieldsDialog(messages, preferences, this::refreshExpectedFieldsSummary).open());
+        configure.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE, ButtonVariant.LUMO_SMALL);
         Button validate = new Button(messages.validateFields(), e -> validateExpectedFields());
-        validate.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        validate.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
 
         HorizontalLayout actions = new HorizontalLayout(configure, validate);
         actions.setSpacing(true);
@@ -298,6 +299,7 @@ public class MainView extends VerticalLayout {
         footer.setPadding(false);
         footer.setSpacing(false);
         footer.setWidthFull();
+        footer.addClassName("expected-fields-bar");
         return footer;
     }
 
@@ -316,7 +318,6 @@ public class MainView extends VerticalLayout {
         try {
             String output = toolkitService.processTemplate(template, dataPanel.getText());
             outputPanel.setText(output);
-            lastFormattedResultOutput = "";
         } catch (TemplateProcessingException | DataModelException ex) {
             outputPanel.setText(messages.errorProcessingTemplate() + ex.getMessage());
         }
@@ -370,50 +371,6 @@ public class MainView extends VerticalLayout {
             validationResult.setText(messages.invalidJsonOutput());
             validationResult.getStyle().set(STYLE_COLOR, LUMO_ERROR_COLOR);
         }
-    }
-
-    /**
-     * Formats the data model.
-     */
-    private void formatDataModel() {
-        String current = dataPanel.getText();
-        if (current.equals(lastFormattedDataInput)) {
-            return;
-        }
-        try {
-            String formatted = toolkitService.formatJson(current);
-            dataPanel.setText(formatted);
-            lastFormattedDataInput = formatted;
-            refreshJsonStatus();
-        } catch (JsonFormatException ex) {
-            Notification.show(messages.formatJsonError() + ": " + ex.getMessage(), 5000, Notification.Position.MIDDLE);
-        }
-    }
-
-    /**
-     * Formats the output.
-     */
-    private void formatOutput() {
-        String current = outputPanel.getText();
-        if (current.equals(lastFormattedResultOutput) || current.isBlank()) {
-            return;
-        }
-        try {
-            String formatted = toolkitService.formatJson(current);
-            outputPanel.setText(formatted);
-            lastFormattedResultOutput = formatted;
-        } catch (JsonFormatException ex) {
-            Notification.show(messages.formatJsonError() + ": " + ex.getMessage(), 5000, Notification.Position.MIDDLE);
-        }
-    }
-
-    /**
-     * Formats the template.
-     */
-    private void formatTemplate() {
-        String formatted = toolkitService.formatTemplate(templatePanel.getText());
-        templatePanel.setText(formatted);
-        refreshTemplateStatus();
     }
 
     /**
@@ -498,12 +455,18 @@ public class MainView extends VerticalLayout {
      */
     private void refreshAllChrome() {
         UI.getCurrent().getPage().setTitle(messages.windowTitle());
+        if (brandTitle != null) {
+            brandTitle.setText(Messages.APP_TITLE);
+        }
         templatePanel.setTitle(messages.panelTemplate());
         dataPanel.setTitle(messages.panelDataModel());
         outputPanel.setTitle(messages.panelRenderedResult());
         templatePanel.refreshLanguageOptions(messages.editorLanguage(), templateLanguageChoices());
         dataPanel.refreshLanguageOptions(messages.editorLanguage(), dataLanguageChoices());
         outputPanel.refreshLanguageOptions(messages.editorLanguage(), outputLanguageChoices());
+        templatePanel.setWordWrapLabel(messages.editorWordWrap());
+        dataPanel.setWordWrapLabel(messages.editorWordWrap());
+        outputPanel.setWordWrapLabel(messages.editorWordWrap());
         refreshJsonStatus();
         refreshTemplateStatus();
         refreshExpectedFieldsSummary();
