@@ -50,19 +50,29 @@ public class FreemarkerTemplateSyntaxChecker implements TemplateSyntaxChecker {
             new Template("syntax-check", new StringReader(t), configProvider.createConfiguration());
             return new FreemarkerTemplateSyntaxCheck(true, "", -1, -1);
         } catch (ParseException e) {
-            int line = e.getLineNumber();
-            int col = e.getColumnNumber();
-            if (line < 1) {
-                line = -1;
-            }
-            if (col < 1) {
-                col = -1;
-            }
-            String msg = e.getMessage() != null ? e.getMessage() : "Parse error";
-            return new FreemarkerTemplateSyntaxCheck(false, msg, line, col);
+            return toSyntaxFailure(t, e);
         } catch (IOException e) {
             String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
             return new FreemarkerTemplateSyntaxCheck(false, msg, -1, -1);
         }
+    }
+
+    private static FreemarkerTemplateSyntaxCheck toSyntaxFailure(String source, ParseException e) {
+        int line = e.getLineNumber();
+        int col = e.getColumnNumber();
+        if (line < 1) {
+            line = -1;
+        }
+        if (col < 1) {
+            col = -1;
+        }
+        String editorMsg = e.getEditorMessage();
+        int[] unclosed = FreemarkerTagSupport.findUnclosedOpenLocation(source, editorMsg);
+        if (unclosed.length >= 2) {
+            line = unclosed[0];
+            col = unclosed[1];
+        }
+        String msg = e.getMessage() != null ? e.getMessage() : "Parse error";
+        return new FreemarkerTemplateSyntaxCheck(false, msg, line, col);
     }
 }
