@@ -191,6 +191,7 @@ public class MainView extends VerticalLayout {
         EditorSection panel = new EditorSection(messages.panelTemplate());
         panel.setLanguageOptions(messages.editorLanguage(), templateLanguageChoices(), MonacoEditor.LANGUAGE_FREEMARKER);
         panel.setWordWrapLabel(messages.editorWordWrap());
+        panel.setCursorLabels(Messages.EDITOR_LINE_SHORT, Messages.EDITOR_COLUMN_SHORT);
         panel.setDocumentFormatter(toolkitService::formatTemplate);
         panel.addAction(messages.singleLine(), this::setTemplateSingleLine);
         panel.onTextChange(text -> refreshTemplateStatus());
@@ -206,6 +207,7 @@ public class MainView extends VerticalLayout {
         EditorSection panel = new EditorSection(messages.panelDataModel());
         panel.setLanguageOptions(messages.editorLanguage(), dataLanguageChoices(), MonacoEditor.LANGUAGE_JSON);
         panel.setWordWrapLabel(messages.editorWordWrap());
+        panel.setCursorLabels(Messages.EDITOR_LINE_SHORT, Messages.EDITOR_COLUMN_SHORT);
         panel.onTextChange(text -> refreshJsonStatus());
         return panel;
     }
@@ -219,6 +221,7 @@ public class MainView extends VerticalLayout {
         EditorSection panel = new EditorSection(messages.panelRenderedResult());
         panel.setLanguageOptions(messages.editorLanguage(), outputLanguageChoices(), MonacoEditor.LANGUAGE_PLAINTEXT);
         panel.setWordWrapLabel(messages.editorWordWrap());
+        panel.setCursorLabels(Messages.EDITOR_LINE_SHORT, Messages.EDITOR_COLUMN_SHORT);
         panel.setReadOnly(true);
         panel.setStatusVisible(false);
         panel.addPrimaryAction(messages.processTemplate(), this::processTemplate);
@@ -467,6 +470,9 @@ public class MainView extends VerticalLayout {
         templatePanel.setWordWrapLabel(messages.editorWordWrap());
         dataPanel.setWordWrapLabel(messages.editorWordWrap());
         outputPanel.setWordWrapLabel(messages.editorWordWrap());
+        templatePanel.setCursorLabels(Messages.EDITOR_LINE_SHORT, Messages.EDITOR_COLUMN_SHORT);
+        dataPanel.setCursorLabels(Messages.EDITOR_LINE_SHORT, Messages.EDITOR_COLUMN_SHORT);
+        outputPanel.setCursorLabels(Messages.EDITOR_LINE_SHORT, Messages.EDITOR_COLUMN_SHORT);
         refreshJsonStatus();
         refreshTemplateStatus();
         refreshExpectedFieldsSummary();

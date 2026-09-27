@@ -50,6 +50,30 @@ public class MonacoEditor extends Component implements HasSize {
      * Vaadin event-data expression for the editor text.
      */
     private static final String EVENT_DATA_ELEMENT_VALUE = "element.value";
+    /**
+     * Client property for cursor line (kept in sync by the JS component).
+     */
+    private static final String PROPERTY_CURSOR_LINE = "cursorLine";
+    /**
+     * Client property for cursor column (kept in sync by the JS component).
+     */
+    private static final String PROPERTY_CURSOR_COLUMN = "cursorColumn";
+    /**
+     * Vaadin event-data expression for cursor line.
+     */
+    private static final String EVENT_DATA_CURSOR_LINE = "element.cursorLine";
+    /**
+     * Vaadin event-data expression for cursor column.
+     */
+    private static final String EVENT_DATA_CURSOR_COLUMN = "element.cursorColumn";
+    /**
+     * Fallback Vaadin event-data expression for cursor line from CustomEvent detail.
+     */
+    private static final String EVENT_DATA_DETAIL_LINE = "event.detail.line";
+    /**
+     * Fallback Vaadin event-data expression for cursor column from CustomEvent detail.
+     */
+    private static final String EVENT_DATA_DETAIL_COLUMN = "event.detail.column";
 
     /**
      * The current editor language id.
@@ -67,6 +91,8 @@ public class MonacoEditor extends Component implements HasSize {
         getElement().setProperty(PROPERTY_VALUE, "");
         getElement().setProperty("language", LANGUAGE_PLAINTEXT);
         getElement().setProperty("wordWrap", true);
+        getElement().setProperty(PROPERTY_CURSOR_LINE, 1);
+        getElement().setProperty(PROPERTY_CURSOR_COLUMN, 1);
         setSizeFull();
         addClassName("monaco-editor-host");
     }
@@ -175,6 +201,37 @@ public class MonacoEditor extends Component implements HasSize {
     }
 
     /**
+     * Listens for cursor line/column changes inside the editor.
+     *
+     * @param listener receives line (1-based) and column (1-based).
+     */
+    public void addCursorPositionListener(CursorPositionListener listener) {
+        getElement().addEventListener("cursor-position-changed", event -> {
+                    JsonNode data = event.getEventData();
+                    listener.onCursorPosition(
+                            readInt(data, EVENT_DATA_CURSOR_LINE, EVENT_DATA_DETAIL_LINE, PROPERTY_CURSOR_LINE, "line"),
+                            readInt(data, EVENT_DATA_CURSOR_COLUMN, EVENT_DATA_DETAIL_COLUMN, PROPERTY_CURSOR_COLUMN, "column"));
+                }).addEventData(EVENT_DATA_CURSOR_LINE)
+                .addEventData(EVENT_DATA_CURSOR_COLUMN)
+                .addEventData(EVENT_DATA_DETAIL_LINE)
+                .addEventData(EVENT_DATA_DETAIL_COLUMN);
+    }
+
+    /**
+     * Listener for Monaco cursor position updates.
+     */
+    @FunctionalInterface
+    public interface CursorPositionListener {
+        /**
+         * Called when the cursor moves.
+         *
+         * @param line   1-based line number.
+         * @param column 1-based column number.
+         */
+        void onCursorPosition(int line, int column);
+    }
+
+    /**
      * Reads the editor text from a Vaadin DOM event payload.
      *
      * @param data the event data.
@@ -193,5 +250,49 @@ public class MonacoEditor extends Component implements HasSize {
             return nested.asString("");
         }
         return "";
+    }
+
+    private static int readInt(JsonNode data, String flatKey, String detailKey, String shortKey,
+                               String detailShortKey) {
+        if (data == null) {
+            return 1;
+        }
+        for (String key : new String[]{flatKey, detailKey, shortKey, detailShortKey}) {
+            JsonNode node = data.get(key);
+            if (isUsableNumber(node)) {
+                return toInt(node);
+            }
+        }
+        JsonNode nestedDetail = data.path("event").path("detail").path(detailShortKey);
+        if (isUsableNumber(nestedDetail)) {
+            return toInt(nestedDetail);
+        }
+        JsonNode nestedElement = data.path("element").path(shortKey);
+        if (isUsableNumber(nestedElement)) {
+            return toInt(nestedElement);
+        }
+        return 1;
+    }
+
+    private static boolean isUsableNumber(JsonNode node) {
+        return node != null && !node.isNull() && !node.isMissingNode()
+                && (node.isNumber() || node.isString());
+    }
+
+    private static int toInt(JsonNode node) {
+        try {
+            if (node.isNumber()) {
+                return node.intValue();
+            }
+            if (node.isString()) {
+                String text = node.asString("").trim();
+                if (!text.isEmpty()) {
+                    return Integer.parseInt(text);
+                }
+            }
+            return node.asInt(1);
+        } catch (RuntimeException ignored) {
+            return 1;
+        }
     }
 }
