@@ -68,6 +68,26 @@ public class EditorSection extends VerticalLayout {
      */
     private final Span statusLabel = new Span();
     /**
+     * Cursor line/column label.
+     */
+    private final Span cursorLabel = new Span();
+    /**
+     * Short label for "line" in the cursor position.
+     */
+    private String cursorLineLabel = "Ln";
+    /**
+     * Short label for "column" in the cursor position.
+     */
+    private String cursorColumnLabel = "Col";
+    /**
+     * Current cursor line (1-based).
+     */
+    private int cursorLine = 1;
+    /**
+     * Current cursor column (1-based).
+     */
+    private int cursorColumn = 1;
+    /**
      * The toolbar.
      */
     private final HorizontalLayout toolbar = new HorizontalLayout();
@@ -128,11 +148,23 @@ public class EditorSection extends VerticalLayout {
 
         statusLabel.addClassName("editor-status");
 
-        HorizontalLayout footer = new HorizontalLayout(statusLabel);
+        cursorLabel.addClassName("editor-cursor-position");
+        refreshCursorLabel();
+        editor.addCursorPositionListener((line, column) -> {
+            cursorLine = line;
+            cursorColumn = column;
+            refreshCursorLabel();
+        });
+
+        HorizontalLayout footer = new HorizontalLayout();
         footer.setWidthFull();
         footer.setPadding(false);
-        footer.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
+        footer.setSpacing(true);
+        footer.setAlignItems(FlexComponent.Alignment.CENTER);
+        footer.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
         footer.addClassName("editor-footer");
+        footer.add(statusLabel, cursorLabel);
+        footer.expand(statusLabel);
 
         VerticalLayout body = new VerticalLayout(editor);
         body.setSizeFull();
@@ -177,6 +209,18 @@ public class EditorSection extends VerticalLayout {
      */
     public void setWordWrapLabel(String label) {
         wordWrapToggle.setLabel(label);
+    }
+
+    /**
+     * Sets the short labels used for cursor line/column display.
+     *
+     * @param lineLabel   label for line (e.g. {@code Ln}).
+     * @param columnLabel label for column (e.g. {@code Col}).
+     */
+    public void setCursorLabels(String lineLabel, String columnLabel) {
+        this.cursorLineLabel = lineLabel == null || lineLabel.isBlank() ? "Ln" : lineLabel;
+        this.cursorColumnLabel = columnLabel == null || columnLabel.isBlank() ? "Col" : columnLabel;
+        refreshCursorLabel();
     }
 
     /**
@@ -317,7 +361,10 @@ public class EditorSection extends VerticalLayout {
      */
     public void setStatusVisible(boolean visible) {
         statusLabel.setVisible(visible);
-        statusLabel.getParent().ifPresent(parent -> parent.setVisible(visible));
+    }
+
+    private void refreshCursorLabel() {
+        cursorLabel.setText(cursorLineLabel + " " + cursorLine + ", " + cursorColumnLabel + " " + cursorColumn);
     }
 
     /**

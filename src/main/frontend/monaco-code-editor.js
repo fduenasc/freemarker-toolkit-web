@@ -83,6 +83,9 @@ class MonacoCodeEditor extends HTMLElement {
         this._timer = 0;
         this._pendingFormatResolve = null;
         this._formatTimeout = 0;
+        this._cursorTimer = 0;
+        this._lastCursorLine = 1;
+        this._lastCursorColumn = 1;
         this._onPointerDown = (event) => {
             const target = event.target;
             if (target instanceof Element && target.closest('vaadin-button, vaadin-menu-bar-item')) {
@@ -131,6 +134,11 @@ class MonacoCodeEditor extends HTMLElement {
             }
         });
         this._editor.onDidBlurEditorText(() => this._emit());
+        this._editor.onDidChangeCursorPosition((event) => {
+            this._scheduleCursorEmit(event.position.lineNumber, event.position.column);
+        });
+        const pos = this._editor.getPosition();
+        this._scheduleCursorEmit(pos ? pos.lineNumber : 1, pos ? pos.column : 1);
         document.addEventListener('pointerdown', this._onPointerDown, true);
     }
 
@@ -138,6 +146,7 @@ class MonacoCodeEditor extends HTMLElement {
         document.removeEventListener('pointerdown', this._onPointerDown, true);
         clearTimeout(this._timer);
         clearTimeout(this._formatTimeout);
+        clearTimeout(this._cursorTimer);
         if (this._pendingFormatResolve) {
             this._pendingFormatResolve(null);
             this._pendingFormatResolve = null;
@@ -247,6 +256,25 @@ class MonacoCodeEditor extends HTMLElement {
     _schedule() {
         clearTimeout(this._timer);
         this._timer = setTimeout(() => this._emit(), 400);
+    }
+
+    _scheduleCursorEmit(line, column) {
+        const nextLine = line > 0 ? line : 1;
+        const nextColumn = column > 0 ? column : 1;
+        this.cursorLine = nextLine;
+        this.cursorColumn = nextColumn;
+        clearTimeout(this._cursorTimer);
+        this._cursorTimer = setTimeout(() => this._emitCursor(nextLine, nextColumn), 40);
+    }
+
+    _emitCursor(line, column) {
+        this.cursorLine = line;
+        this.cursorColumn = column;
+        this.dispatchEvent(new CustomEvent('cursor-position-changed', {
+            bubbles: true,
+            composed: true,
+            detail: {line, column}
+        }));
     }
 
     _emit() {

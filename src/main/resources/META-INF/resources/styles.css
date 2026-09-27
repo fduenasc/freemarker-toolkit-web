@@ -141,7 +141,16 @@ html, body, #outlet {
 
 .editor-status {
     font-size: var(--lumo-font-size-xs);
-    font-family: var(--lumo-font-family);
+    font-family: var(--lumo-font-family), serif;
+    min-width: 0;
+}
+
+.editor-cursor-position {
+    flex-shrink: 0;
+    font-size: var(--lumo-font-size-xs);
+    font-variant-numeric: tabular-nums;
+    color: var(--lumo-secondary-text-color);
+    white-space: nowrap;
 }
 
 monaco-code-editor {

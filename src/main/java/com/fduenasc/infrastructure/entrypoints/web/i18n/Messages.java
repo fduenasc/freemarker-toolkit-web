@@ -31,6 +31,14 @@ public final class Messages {
      * Compact application title shown in the header bar (not localized).
      */
     public static final String APP_TITLE = "FreeMarker Toolkit";
+    /**
+     * Short cursor line label (not localized).
+     */
+    public static final String EDITOR_LINE_SHORT = "L";
+    /**
+     * Short cursor column label (not localized).
+     */
+    public static final String EDITOR_COLUMN_SHORT = "C";
 
     private final UserPreferences preferences;
 
